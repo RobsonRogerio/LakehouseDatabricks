@@ -1,0 +1,28 @@
+resources:
+  jobs:
+    grid_atualizacao:
+      name: grid_atualizacao
+      tasks:
+        - task_key: atualizar_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.grid_intelligence.id}
+        - task_key: aplicar_governanca_dado_pessoal
+          depends_on:
+            - task_key: atualizar_pipeline
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/sql/governanca_dado_pessoal.sql
+            parameters:
+              catalogo: ${var.catalog}
+              schema_bronze: ${resources.schemas.bronze.name}
+        - task_key: criar_metric_view_continuidade
+          depends_on:
+            - task_key: atualizar_pipeline
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/sql/metric_view_continuidade.sql
+            parameters:
+              catalogo: ${var.catalog}
+              schema_gold: ${resources.schemas.gold.name}

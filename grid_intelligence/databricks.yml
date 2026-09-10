@@ -21,6 +21,10 @@ artifacts:
 variables:
   catalog:
     description: The catalog to use
+  warehouse_id:
+    description: SQL warehouse usado pela task de governanca de dado pessoal
+    lookup:
+      warehouse: Serverless Starter Warehouse
 
 targets:
   dev:
