@@ -8,3 +8,7 @@ scratch/**
 !scratch/README.md
 **/explorations/**
 **/!explorations/README.md
+
+# Dados de origem — ja enviados ao volume Databricks, nao versionados aqui
+landing/
+*.bak

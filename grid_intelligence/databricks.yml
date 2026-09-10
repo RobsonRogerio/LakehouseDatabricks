@@ -7,6 +7,11 @@ bundle:
 include:
   - resources/*.yml
 
+# Isolamento dev/prod e feito pelo catalogo, nao pelo nome do schema — os schemas
+# raw/bronze/silver/gold mantem o mesmo nome nos dois ambientes.
+experimental:
+  skip_name_prefix_for_schema: true
+
 artifacts:
   python_artifact:
     type: whl
@@ -16,8 +21,6 @@ artifacts:
 variables:
   catalog:
     description: The catalog to use
-  schema:
-    description: The schema to use
 
 targets:
   dev:
@@ -30,8 +33,7 @@ targets:
     workspace:
       host: https://dbc-b2a23285-d0c7.cloud.databricks.com
     variables:
-      catalog: workspace
-      schema: ${workspace.current_user.short_name}
+      catalog: grid_dev
   prod:
     mode: production
     workspace:
@@ -39,8 +41,7 @@ targets:
       # We explicitly deploy to /Workspace/Users/robson.rogerio@gmail.com to make sure we only have a single copy.
       root_path: /Workspace/Users/robson.rogerio@gmail.com/.bundle/${bundle.name}/${bundle.target}
     variables:
-      catalog: workspace
-      schema: prod
+      catalog: grid_intelligence
     permissions:
       - user_name: robson.rogerio@gmail.com
         level: CAN_MANAGE

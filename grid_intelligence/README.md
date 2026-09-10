@@ -61,3 +61,39 @@ with this project. It's also possible to interact with it directly using the CLI
    ```
    $ uv run pytest
    ```
+
+## Setup — catalogos
+
+O bundle **nao cria catalogos** (sao recurso de conta). Antes do primeiro deploy, criar
+`grid_dev` (ambiente `dev`) e `grid_intelligence` (ambiente `prod`) por SQL:
+
+```bash
+databricks experimental aitools tools query --profile grid_intelligence \
+  "CREATE CATALOG IF NOT EXISTS grid_dev COMMENT 'Catalogo de desenvolvimento da Grid Intelligence'"
+
+databricks experimental aitools tools query --profile grid_intelligence \
+  "CREATE CATALOG IF NOT EXISTS grid_intelligence COMMENT 'Catalogo de producao da Grid Intelligence'"
+```
+
+Depois, conceder privilegios no meu usuario (necessario se um catalogo for compartilhado
+com outra pessoa alem do dono):
+
+```bash
+databricks grants update CATALOG grid_dev \
+  --json '{"changes":[{"principal":"SEU-EMAIL","add":["ALL_PRIVILEGES"]}]}' \
+  --profile grid_intelligence
+```
+
+### ⚠️ Recomecar do zero (destrutivo)
+
+Se um catalogo ja existir e for preciso recomecar limpo, o comando abaixo **e
+destrutivo e nao pergunta duas vezes** — `CASCADE` remove schemas, tabelas, volumes e
+os arquivos dentro deles:
+
+```bash
+databricks experimental aitools tools query --profile grid_intelligence \
+  "DROP CATALOG IF EXISTS grid_dev CASCADE"
+```
+
+Confirme sempre antes de rodar — nunca execute sem ter certeza do ambiente
+(`grid_dev` vs `grid_intelligence`).
