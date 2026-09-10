@@ -18,3 +18,5 @@ resources:
         schema_gold: ${resources.schemas.gold.name}
         volume_landing: /Volumes/${var.catalog}/${resources.schemas.raw.name}/landing
         duracao_minima_interrupcao_min: "3"
+        limiar_queda_uc_pct: "-20"
+        faixa_estabilidade_conjunto_pct: "10"
