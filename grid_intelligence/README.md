@@ -123,6 +123,38 @@ O `bundle deploy` cria o dashboard como rascunho; publique para o link ficar vis
 databricks lakeview publish <DASHBOARD_ID> --warehouse-id <WAREHOUSE_ID> --profile grid_intelligence
 ```
 
+## Promovendo para prod
+
+Tudo acima roda em `grid_dev`. Promover para `grid_intelligence` repete os mesmos passos
+2-6 trocando o target/catalogo — o catalogo `grid_intelligence` ja existe (criado junto
+com `grid_dev` no setup), so falta popular:
+
+```bash
+databricks bundle validate -t prod --profile grid_intelligence
+databricks bundle deploy -t prod --profile grid_intelligence
+
+databricks fs cp -r landing dbfs:/Volumes/grid_intelligence/raw/landing --overwrite --profile grid_intelligence
+
+databricks bundle run grid_atualizacao -t prod --profile grid_intelligence
+
+databricks lakeview list --profile grid_intelligence -o json   # achar o dashboard_id novo (prod tem um id proprio)
+databricks lakeview publish <DASHBOARD_ID_PROD> --warehouse-id <WAREHOUSE_ID> --profile grid_intelligence
+
+python scripts/aplicar_genie_space.py grid_intelligence --profile grid_intelligence
+```
+
+Duas coisas que **nao** precisam repetir: o grupo `atendimento` e do workspace, nao do
+catalogo — ja vale para prod. E o `mode: production` do target (sem prefixo `[dev ...]`)
+ja garante que o deploy fica isolado do que existe em dev, mesmo compartilhando o mesmo
+job/pipeline *definido* no bundle.
+
+**Atencao ao Genie space:** o script identifica o space existente pelo **titulo**, nao
+pelo catalogo. Rodar `aplicar_genie_space.py grid_intelligence` **atualiza o mesmo space**
+que hoje aponta para `grid_dev`, redirecionando-o para prod — nao cria um segundo space.
+Se quiser um space de dev e outro de prod, permanentemente separados, ajuste `TITLE` em
+`scripts/aplicar_genie_space.py` (por ambiente, ex. sufixo `(dev)` / `(prod)`) antes de
+aplicar.
+
 ## Estrutura de pastas
 
 ```
