@@ -1,0 +1,100 @@
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {
+        "id": "10000000000000000000000000000001",
+        "question": ["Resuma o que aconteceu em Campinas nas ultimas 24 horas e diga o que precisa de acao hoje"]
+      },
+      {
+        "id": "10000000000000000000000000000002",
+        "question": ["Qual foi o DEC e o FEC de cada conjunto no ultimo mes?"]
+      },
+      {
+        "id": "10000000000000000000000000000003",
+        "question": ["Quais bairros concentram unidades com prioridade alta de inspecao?"]
+      },
+      {
+        "id": "10000000000000000000000000000004",
+        "question": ["Quais clientes estao em risco de abrir reclamacao na ouvidoria?"]
+      },
+      {
+        "id": "10000000000000000000000000000005",
+        "question": ["Quantos chamados com risco a saude tivemos na ultima semana, e em quais conjuntos?"]
+      }
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {"identifier": "${catalogo}.gold.continuidade_metricas"},
+      {"identifier": "${catalogo}.gold.painel_operacional_dia"},
+      {"identifier": "${catalogo}.gold.prioridade_inspecao_uc"},
+      {"identifier": "${catalogo}.gold.saude_cliente"}
+    ]
+  },
+  "instructions": {
+    "example_question_sqls": [
+      {
+        "id": "20000000000000000000000000000001",
+        "question": ["Resuma o que aconteceu em Campinas nas ultimas 24 horas e diga o que precisa de acao hoje"],
+        "sql": [
+          "SELECT dia, nome_conjunto, qtd_interrupcoes, uc_horas_interrompidas, qtd_chamados, qtd_risco_saude, qtd_ameacaram_ouvidoria, acao_recomendada\n",
+          "FROM ${catalogo}.gold.painel_operacional_dia\n",
+          "WHERE municipio = 'Campinas'\n",
+          "  AND dia = (SELECT max(dia) FROM ${catalogo}.gold.painel_operacional_dia)\n",
+          "ORDER BY nome_conjunto"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000002",
+        "question": ["Qual foi o DEC e o FEC de cada conjunto no ultimo mes?"],
+        "sql": [
+          "SELECT `Conjunto`, MEASURE(`DEC`) AS dec, MEASURE(`FEC`) AS fec\n",
+          "FROM ${catalogo}.gold.continuidade_metricas\n",
+          "WHERE `Mes` = (SELECT max(`Mes`) FROM ${catalogo}.gold.continuidade_metricas)\n",
+          "GROUP BY ALL\n",
+          "ORDER BY `Conjunto`"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000003",
+        "question": ["Quais bairros concentram unidades com prioridade alta de inspecao?"],
+        "sql": [
+          "SELECT bairro, count(*) AS qtd_ucs\n",
+          "FROM ${catalogo}.gold.prioridade_inspecao_uc\n",
+          "WHERE prioridade_inspecao = 'alta'\n",
+          "GROUP BY bairro\n",
+          "ORDER BY qtd_ucs DESC"
+        ]
+      },
+      {
+        "id": "20000000000000000000000000000004",
+        "question": ["Quais clientes estao em risco de abrir reclamacao na ouvidoria?"],
+        "sql": [
+          "SELECT id_cliente, nome_conjunto, bairro, qtd_chamados, motivo_predominante, risco_ouvidoria\n",
+          "FROM ${catalogo}.gold.saude_cliente\n",
+          "WHERE risco_ouvidoria = 'alto'\n",
+          "ORDER BY ultimo_chamado_em DESC"
+        ]
+      }
+    ],
+    "text_instructions": [
+      {
+        "id": "30000000000000000000000000000001",
+        "content": [
+          "Voce e o copiloto de operacoes da Luz do Vale Distribuidora S.A., uma distribuidora de energia eletrica regulada pela ANEEL. Responda sempre em portugues do Brasil.\n",
+          "\n",
+          "VOCABULARIO DO SETOR: UC (Unidade Consumidora) e o ponto de entrega de energia -- nao e sinonimo de cliente, um cliente pode ter varias UCs. Conjunto e a subdivisao geografica da area de concessao, a unidade de agregacao do regulador. DEC e a Duracao Equivalente de Interrupcao por UC (horas medias sem fornecimento). FEC e a Frequencia Equivalente de Interrupcao por UC (numero medio de interrupcoes). PNT e Perdas Nao Tecnicas -- este projeto nao rotula fraude ou furto, o proxy operacional para PNT e a tabela de prioridade de inspecao.\n",
+          "\n",
+          "ONDE ESTA CADA COISA: pergunta sobre o que aconteceu num dia ou conjunto, ou sobre o que precisa de acao, vai em painel_operacional_dia. Pergunta sobre DEC, FEC ou continuidade de fornecimento vai em continuidade_metricas -- esta e uma METRIC VIEW: toda medida precisa de MEASURE(`Nome`) e a consulta termina com GROUP BY ALL. Nunca calcule DEC ou FEC a mao somando ou dividindo colunas de outra tabela -- a definicao vive so na metric view. Pergunta sobre unidades consumidoras candidatas a inspecao, ou sobre bairros, vai em prioridade_inspecao_uc (grao UC). Pergunta sobre clientes ou risco de ouvidoria vai em saude_cliente (grao cliente) -- nunca use prioridade_inspecao_uc para responder sobre clientes, sao grãos diferentes.\n",
+          "\n",
+          "PLAYBOOK DE INVESTIGACAO, nesta ordem, quando pedirem para reconstruir o que aconteceu numa regiao ou periodo: 1) localize o dia e o conjunto em painel_operacional_dia; 2) compare o volume de chamados daquele dia com a media dos 30 dias anteriores; 3) verifique qtd_risco_saude e qtd_ameacaram_ouvidoria, que sao os dois numeros que exigem acao imediata; 4) cheque o efeito no mes consultando DEC e FEC em continuidade_metricas; 5) termine sempre pela coluna acao_recomendada.\n",
+          "\n",
+          "'ULTIMAS 24 HORAS' OU 'HOJE' significa o ultimo dia com movimento na tabela painel_operacional_dia (o MAX(dia) da tabela), nunca current_date(). O dataset e sintetico e pode ter sido gerado dias atras -- ancorar no relogio do sistema devolve resultado vazio.\n",
+          "\n",
+          "REGRA INEGOCIAVEL (RN-07): a coluna prioridade_inspecao de prioridade_inspecao_uc e uma prioridade de inspecao tecnica -- alta, media ou baixa -- calculada por regra explicavel (queda de consumo contra o proprio historico, com a vizinhanca estavel, mais sinal de violacao no medidor). Nunca descreva uma UC ou um cliente como fraude, furto, roubo ou irregularidade, mesmo que a pergunta use esses termos. Queda de consumo tambem e mudanca de morador, imovel desocupado, defeito de medidor ou erro de leitura -- so uma visita tecnica confirma a causa. Se alguem perguntar quem esta roubando energia ou algo equivalente, recuse esse enquadramento, responda com a lista de prioridade de inspecao (motivo_observado inclusive) e explique a diferenca entre prioridade de inspecao e acusacao."
+        ]
+      }
+    ]
+  }
+}
