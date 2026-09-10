@@ -1,0 +1,20 @@
+resources:
+  pipelines:
+    grid_intelligence:
+      name: grid_intelligence
+      catalog: ${var.catalog}
+      target: ${resources.schemas.bronze.name}
+      serverless: true
+      continuous: false
+      root_path: ../src/pipelines/grid_intelligence
+      libraries:
+        - glob:
+            include: ../src/pipelines/grid_intelligence/transformations/**
+      configuration:
+        catalogo: ${var.catalog}
+        schema_raw: ${resources.schemas.raw.name}
+        schema_bronze: ${resources.schemas.bronze.name}
+        schema_silver: ${resources.schemas.silver.name}
+        schema_gold: ${resources.schemas.gold.name}
+        volume_landing: /Volumes/${var.catalog}/${resources.schemas.raw.name}/landing
+        duracao_minima_interrupcao_min: "3"
