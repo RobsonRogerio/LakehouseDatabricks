@@ -30,6 +30,11 @@ build-backend = "hatchling.build"
 [tool.ruff]
 line-length = 120
 
+[tool.ruff.lint.per-file-ignores]
+# Databricks notebook source files: dbutils/spark/display are injected by the
+# notebook runtime, not actual undefined names.
+"src/notebooks/*.py" = ["F821"]
+
 [tool.databricks.environment]
 environment_version = "5"
 

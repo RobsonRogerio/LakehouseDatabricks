@@ -13,7 +13,8 @@ AS WITH interrupcao_dia AS (
     data_evento                     AS dia,
     count(*)                        AS qtd_interrupcoes,
     sum(uc_horas_interrompidas)     AS uc_horas_interrompidas,
-    max(duracao_horas)              AS maior_duracao_horas
+    max(duracao_horas)              AS maior_duracao_horas,
+    mode(causa)                     AS causa_predominante
   FROM ${catalogo}.${schema_silver}.interrupcoes_validas
   GROUP BY id_conjunto, data_evento
 ),
@@ -51,6 +52,7 @@ SELECT
   coalesce(i.qtd_interrupcoes, 0)          AS qtd_interrupcoes,
   coalesce(i.uc_horas_interrompidas, 0.0)  AS uc_horas_interrompidas,
   coalesce(i.maior_duracao_horas, 0.0)     AS maior_duracao_horas,
+  i.causa_predominante,
   coalesce(ch.qtd_chamados, 0)             AS qtd_chamados,
   coalesce(ch.qtd_chamados_negativos, 0)   AS qtd_chamados_negativos,
   coalesce(ch.qtd_risco_saude, 0)          AS qtd_risco_saude,

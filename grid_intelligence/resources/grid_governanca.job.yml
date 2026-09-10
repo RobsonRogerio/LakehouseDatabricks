@@ -26,3 +26,13 @@ resources:
             parameters:
               catalogo: ${var.catalog}
               schema_gold: ${resources.schemas.gold.name}
+        - task_key: relatorio_executivo
+          depends_on:
+            - task_key: criar_metric_view_continuidade
+          notebook_task:
+            notebook_path: ../src/notebooks/relatorio_executivo.py
+            base_parameters:
+              catalogo: ${var.catalog}
+              schema_gold: ${resources.schemas.gold.name}
+              regiao: Campinas
+              usar_ia: "true"

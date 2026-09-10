@@ -25,7 +25,7 @@ DEFAULT_WAREHOUSE_ID = "7601ed0c547d89aa"
 
 
 def run(cmd: list[str]) -> str:
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
     if result.returncode != 0:
         print(f"Comando falhou: {' '.join(cmd)}", file=sys.stderr)
         print(result.stdout, file=sys.stderr)
